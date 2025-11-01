@@ -3,6 +3,7 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
+import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -114,10 +115,56 @@ export const signup = async (req, res) => {
 //   res.send("Signup Endpoint");
 // };
 
-export const login = (req, res) => {
-  res.send("Login Endpoint");
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+    const confirmedPassword = bcrypt.compare(password, user.password);
+
+    if (!confirmedPassword)
+      return res.status(400).json({ message: "Invalid credentials" });
+
+    generateToken(user._id, res);
+
+    res.status(200).json({
+      _id: user._id,
+      email: user.email,
+      fullName: user.fullName,
+      profilePic: user.profilePic,
+    });
+  } catch (error) {
+    console.log("Error logging in user ", error);
+    res.status(500).json({ message: "Error in login controller" });
+  }
 };
 
-export const update = (req, res) => {
-  res.send("Update endpoint");
+export const logout = (_, res) => {
+  res.cookie("jwt", "", { maxAge: 0 });
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
+export const updateProfile = (req, res) => {
+  try {
+    const { profilePic } = req.body;
+    if (!profilePic)
+      return res.status(400).json({ message: "Profile pic is required" });
+
+    const userId = req.user._id;
+
+    const uploadResponse = cloudinary.uploader.upload(profilePic);
+
+    const updatedUser = User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    );
+
+    res.status(200).json({ updatedUser });
+  } catch (error) {
+    console.log("Error in upload profile pic", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
