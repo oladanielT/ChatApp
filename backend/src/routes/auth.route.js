@@ -20,7 +20,7 @@ router.post("/logout", logout);
 
 router.put("/update-profile", protectRoute, updateProfile);
 
-router.post("/check", protectRoute, (req, res) =>
+router.get("/check", protectRoute, (req, res) =>
   res.status(200).json(req.user)
 );
 

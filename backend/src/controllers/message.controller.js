@@ -52,8 +52,10 @@ export const getChatsPartner = async (req, res) => {
 
 export const getMessageByUserId = async (req, res) => {
   try {
-    const myId = req.user._id;
-    const { id: userToChatId } = req.params.id;
+    const myId = req.user._id.toString();
+    const { id: userToChatId } = req.params;
+
+    console.log(myId, userToChatId);
 
     const messages = await Message.find({
       $or: [
@@ -61,6 +63,8 @@ export const getMessageByUserId = async (req, res) => {
         { senderId: userToChatId, receiverId: myId },
       ],
     });
+
+    console.log("Found messages:", messages.length);
 
     res.status(200).json(messages);
   } catch (error) {
@@ -72,11 +76,16 @@ export const getMessageByUserId = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
-    const senderId = req.user._id;
-    const receiverId = req.params.id;
+    const senderId = req.user._id.toString();
+    const { id: receiverId } = req.params;
 
     console.log("Sender ID:", senderId);
     console.log("Receiver ID:", receiverId);
+
+    console.log("=== Backend Debug ===");
+    console.log("Text:", text);
+    console.log("Image received?", !!image);
+    console.log("Image length:", image?.length);
 
     if (!text && !image)
       return res.status(400).json({ message: "Text or Image is required" });
@@ -104,6 +113,7 @@ export const sendMessage = async (req, res) => {
 
     res.status(201).json(newMessage);
   } catch (error) {
+    res.status(500).json(error);
     console.log("Error sending message", error.message);
   }
 };

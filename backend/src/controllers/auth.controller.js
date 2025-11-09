@@ -122,7 +122,7 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    const confirmedPassword = bcrypt.compare(password, user.password);
+    const confirmedPassword = await bcrypt.compare(password, user.password);
 
     if (!confirmedPassword)
       return res.status(400).json({ message: "Invalid credentials" });
@@ -146,7 +146,7 @@ export const logout = (_, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
 
-export const updateProfile = (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const { profilePic } = req.body;
     if (!profilePic)
@@ -154,9 +154,9 @@ export const updateProfile = (req, res) => {
 
     const userId = req.user._id;
 
-    const uploadResponse = cloudinary.uploader.upload(profilePic);
+    const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-    const updatedUser = User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
       { profilePic: uploadResponse.secure_url },
       { new: true }
